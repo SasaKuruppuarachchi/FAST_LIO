@@ -513,7 +513,7 @@ void publish_frame_world(rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::Share
     /**************** save map ****************/
     /* 1. make sure you have enough memories
     /* 2. noted that pcd save will influence the real-time performences **/
-    /*
+    
     if (pcd_save_en)
     {
         int size = feats_undistort->points.size();
@@ -532,7 +532,7 @@ void publish_frame_world(rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::Share
         if (pcl_wait_save->size() > 0 && pcd_save_interval > 0  && scan_wait_num >= pcd_save_interval)
         {
             pcd_index ++;
-            string all_points_dir(string(string(ROOT_DIR) + "PCD/scans_") + to_string(pcd_index) + string(".pcd"));
+            string all_points_dir(string(string(ROOT_DIR) + "PCD/scans_latesst") + string(".pcd")); //+ to_string(pcd_index) 
             pcl::PCDWriter pcd_writer;
             cout << "current scan saved to /PCD/" << all_points_dir << endl;
             pcd_writer.writeBinary(all_points_dir, *pcl_wait_save);
@@ -540,7 +540,7 @@ void publish_frame_world(rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::Share
             scan_wait_num = 0;
         }
     }
-    */
+    
 }
 
 void publish_frame_body(rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubLaserCloudFull_body)
@@ -622,6 +622,24 @@ void set_posestamp(T & out)
     out.pose.orientation.y = geoQuat.y;
     out.pose.orientation.z = geoQuat.z;
     out.pose.orientation.w = geoQuat.w;
+    
+}
+
+template<typename T>
+void set_twiststamp(T & out)
+{
+    // added to publish twist message
+    try {
+        out.twist.linear.x = state_point.vel(0);
+        out.twist.linear.y = state_point.vel(1);
+        out.twist.linear.z = state_point.vel(2);    
+        // Measures The structure is defined in the common_lib.h file
+        out.twist.angular.x = Measures.imu.back()->angular_velocity.x;
+        out.twist.angular.y = Measures.imu.back()->angular_velocity.y;
+        out.twist.angular.z = Measures.imu.back()->angular_velocity.z;
+    } catch (const std::exception &e) {
+        RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "Failed to set twist stamp level 1: %s", e.what());
+    }
     
 }
 
